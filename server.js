@@ -772,7 +772,7 @@ app.get("/verifymail/:email", (req, res) => {
     }
 
     if (result.affectedRows > 0) {
-      return res.redirect("libraryreviews.vercel.app/login?verified=true");
+      return res.redirect("https://libraryreviews.vercel.app/login?verified=true");
     } else {
       return res.status(400).json({ error: 'User not found or already verified' });
     }
