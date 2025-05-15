@@ -693,7 +693,7 @@ app.post('/register', (req, res) => {
         const token = jwt.sign({ id: userId, email }, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c', { expiresIn: '24h' });
 
         // Crear el enlace de verificación
-        const verificationUrl = process.env.REACT_APP_API_URL + `/verifymail/${email}`;
+        const verificationUrl = `https://api-wabm.onrender.com/verifymail/${email}`;
 
         const mailOptions = {
           from: 'jloppad@g.educaand.es',
