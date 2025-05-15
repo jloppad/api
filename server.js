@@ -464,6 +464,7 @@ app.post("/ratings", (req, res) => {
           console.error(updateErr);
           return res.status(500).json({ error: "Error updating rating" });
         }
+        updateAverageRating(bookId); 
         res.json({ message: "Rating updated successfully" });
       });
     } else {
@@ -478,6 +479,7 @@ app.post("/ratings", (req, res) => {
           console.error(insertErr);
           return res.status(500).json({ error: "Error creating rating" });
         }
+        updateAverageRating(bookId); 
         res.json({ message: "Rating created successfully", id: insertResult.insertId });
       });
     }
@@ -505,7 +507,7 @@ app.put("/ratings/:id", (req, res) => {
         console.error(err);
         return res.status(500).json({ error: "Error updating rating" });
       }
-
+      updateAverageRating(bookId); 
       res.json({ message: "Rating updated successfully" });
     }
   );
@@ -515,21 +517,42 @@ app.put("/ratings/:id", (req, res) => {
 app.delete("/ratings/:id", (req, res) => {
   const ratingId = req.params.id;
 
-  const query = `DELETE FROM ratings WHERE id = ?`;
+  // Primero obtenemos el bookId asociado a esta valoración
+  const getBookIdQuery = `SELECT bookId FROM ratings WHERE id = ?`;
 
-  db.query(query, [ratingId], (err, result) => {
+  db.query(getBookIdQuery, [ratingId], (err, result) => {
     if (err) {
       console.error(err);
-      return res.status(500).json({ error: "Error deleting rating" });
+      return res.status(500).json({ error: "Error retrieving rating" });
     }
 
-    if (result.affectedRows === 0) {
+    if (result.length === 0) {
       return res.status(404).json({ error: "Rating not found" });
     }
 
-    res.json({ message: "Rating deleted successfully" });
+    const bookId = result[0].bookId;
+
+    // Ahora eliminamos la valoración
+    const deleteQuery = `DELETE FROM ratings WHERE id = ?`;
+
+    db.query(deleteQuery, [ratingId], (deleteErr, deleteResult) => {
+      if (deleteErr) {
+        console.error(deleteErr);
+        return res.status(500).json({ error: "Error deleting rating" });
+      }
+
+      if (deleteResult.affectedRows === 0) {
+        return res.status(404).json({ error: "Rating not found" });
+      }
+
+      // Finalmente, actualizamos la media
+      updateAverageRating(bookId);
+
+      res.json({ message: "Rating deleted successfully" });
+    });
   });
 });
+
 
 /////////////           Rutas para Book Images          /////////////    
 
@@ -1015,6 +1038,30 @@ app.delete("/libros/:bookId/imagenes", (req, res) => {
       return res.status(200).json({ message: 'Images deleted successfully' });
   });
 });
+
+function updateAverageRating(bookId) {
+  const query = `
+    SELECT AVG(value) AS avgRating FROM ratings WHERE bookId = ?
+  `;
+
+  db.query(query, [bookId], (err, result) => {
+    if (err) {
+      return console.error("Error calculating average rating:", err);
+    }
+
+    const averageRating = result[0].avgRating || 0;
+
+    const updateQuery = `
+      UPDATE books SET averageRating = ? WHERE id = ?
+    `;
+
+    db.query(updateQuery, [averageRating, bookId], (updateErr) => {
+      if (updateErr) {
+        console.error("Error updating average rating:", updateErr);
+      }
+    });
+  });
+}
 
 app.listen(8800, '0.0.0.0', () => {
   console.log("Connected to backend.");
