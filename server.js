@@ -772,7 +772,7 @@ app.get("/verifymail/:email", (req, res) => {
     }
 
     if (result.affectedRows > 0) {
-      return res.redirect("http://localhost:3000/login?verified=true");
+      return res.redirect("proyecto-react-library.vercel.app/login?verified=true");
     } else {
       return res.status(400).json({ error: 'User not found or already verified' });
     }
